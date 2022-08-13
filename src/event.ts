@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const eventEmitter = new EventTarget();
+const eventHandlers = new HashMap<Symbol, Set<(...args: any[]) => void>>();
 
 export const createEvent = () => {
   return Symbol();
@@ -11,19 +11,15 @@ export const useEvent = <T = any>(event: Symbol) => {
 
   useEffect(() => {
     const handler = (d) => setState(d);
-
-    eventEmitter.addEventListener(event.toString(), handler);
-
-    return () => eventEmitter.removeEventListener(event.toString(), handler);
+    
+    eventHandlers.get(event).add(handler);
+    
+    return () => eventHandlers.get(event).delete(handler);
   }, [event]);
 
   return state;
 };
 
 export const emitEvent = (event: Symbol, data: any) => {
-  eventEmitter.dispatchEvent(
-    new Event(event.toString(), {
-      bubbles: false
-    })
-  );
+  eventHandlers.get(event).forEach((handler) => handler(data));
 };
